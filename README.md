@@ -46,7 +46,7 @@ No, really. Please stop my suffering immediately if this is useless.
 - Debate `wp_script_is()` and alternatives.
 - Debate what should and should not be configurable for compatibility purposes.
 - Assure the plugin loader is written in the best way humanly possible (and works as intended).
-- Some kind of `row_action` if the plugin is active (scripts loaded) or lazy-loaded.
+- Some kind of `row_action` signaling if the plugin is active (scripts loaded) or lazy-loaded.
 - Code check me, please.
 
 ## Requirements
