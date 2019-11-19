@@ -1,0 +1,42 @@
+{
+  "name": "log1x/sage-eject-blocks",
+  "type": "package",
+  "license": "MIT",
+  "description": "Eject Sage 10 editor scripts to a optional lazy-loaded plugin.",
+  "authors": [
+    {
+      "name": "Brandon Nifong",
+      "email": "brandon@tendency.me"
+    }
+  ],
+  "keywords": [
+    "wordpress",
+    "gutenberg"
+  ],
+  "support": {
+    "issues": "https://github.com/log1x/sage-eject-blocks/issues"
+  },
+  "autoload": {
+    "psr-4": {
+      "Log1x\\EjectBlocks\\": "src/"
+    }
+  },
+  "require": {
+    "php": ">=7.2"
+  },
+  "require-dev": {
+    "squizlabs/php_codesniffer": "^3.5"
+  },
+  "extra": {
+    "acorn": {
+      "providers": [
+        "Log1x\\EjectBlocks\\EjectBlocksServiceProvider"
+      ]
+    }
+  },
+  "scripts": {
+    "lint": [
+      "phpcs --ignore=vendor --extensions=php --standard=PSR12 ."
+    ]
+  }
+}

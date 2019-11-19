@@ -1,0 +1,112 @@
+<?php
+/**
+ * Plugin Name:  DummyThemeName Blocks
+ * Plugin URI:   DummyThemeUri
+ * Description:  Ejected blocks and editor scripts for DummyThemeName.
+ * Version:      1.0.0
+ * Author:       DummyAuthorName
+ * Author URI:   DummyAuthorUri
+ */
+
+class Plugin
+{
+    /**
+     * The plugin status.
+     *
+     * @var bool
+     */
+    protected $enabled = true;
+
+    /**
+     * The plugin path.
+     *
+     * @var string
+     */
+    protected $path;
+
+    /**
+     * The editor scripts.
+     *
+     * @var string
+     */
+    protected $scripts = [DummyScripts];
+
+    /**
+     * The editor asset manifest.
+     *
+     * @var string
+     */
+    protected $manifest = 'DummyManifest';
+
+    /**
+     * The webpack manifest.
+     *
+     * @var string
+     */
+    protected $manifestJs = 'manifest.js';
+
+    /**
+     * The text domain.
+     *
+     * @var string
+     */
+    protected $slug = 'DummyTextDomain';
+
+    /**
+     * Initialize the Plugin handler.
+     *
+     * @return void
+     */
+    public function handle()
+    {
+        $this->path = plugin_dir_path(__FILE__);
+        $this->manifest = $this->path . $this->manifest;
+        $this->manifestJs = $this->path . $this->manifestJs;
+
+        if (! file_exists($this->manifest)) {
+            return;
+        }
+
+        $this->manifest = include $this->manifest;
+
+        $this->register();
+    }
+
+    /**
+     * Register scripts with the block editor.
+     *
+     * @return void
+     */
+    protected function register()
+    {
+        add_action('enqueue_block_editor_assets', function () {
+            foreach ($this->scripts as $script) {
+                if (! file_exists($this->path . $script) || wp_script_is($this->slug . '/' . basename($script))) {
+                    $this->enabled = false;
+                    break;
+                }
+
+                wp_enqueue_script(
+                    $this->slug . '/' . basename($script),
+                    plugins_url($script, __FILE__),
+                    $this->manifest['dependencies'],
+                    $this->manifest['version']
+                );
+            }
+
+            if (! $this->enabled || ! file_exists($this->manifestJs)) {
+                return;
+            }
+
+            $this->manifestJs = file_get_contents($this->manifestJs);
+
+            wp_add_inline_script(
+                $this->slug . '/' . basename($script),
+                $this->manifestJs,
+                'before'
+            );
+        }, 101);
+    }
+}
+
+return (new Plugin())->handle();
