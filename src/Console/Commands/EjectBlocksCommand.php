@@ -2,11 +2,13 @@
 
 namespace Log1x\EjectBlocks\Console\Commands;
 
+use Exception;
 use WP_Filesystem_Base;
 use Illuminate\Support\Str;
 use Illuminate\Filesystem\Filesystem;
 
 use function Roots\asset;
+use function Roots\public_path;
 
 class EjectBlocksCommand extends Command
 {
@@ -62,9 +64,12 @@ class EjectBlocksCommand extends Command
     /**
      * The plugin assets location.
      *
-     * @var string
+     * @var string|array
      */
-    protected $js = 'scripts/';
+    protected $js = [
+        'scripts',
+        'js',
+    ];
 
     /**
      * The plugin assets.
@@ -113,7 +118,7 @@ class EjectBlocksCommand extends Command
 
         $this->task('Setting up plugin', function () {
             $this->label = $this->anticipate('Plugin name?', [], $this->label);
-            $this->js = Str::finish($this->anticipate('Plugin assets location?', [], $this->js), '/');
+            $this->js = Str::finish($this->anticipate('Plugin assets location?', [], $this->findAssets()), '/');
             $this->assets = explode(
                 ', ',
                 $this->anticipate('Plugin assets?', [], implode(', ', $this->assets))
@@ -122,7 +127,7 @@ class EjectBlocksCommand extends Command
 
         $this->task('Verifying permissions', function () {
             if (! $this->verifyPermissions()) {
-                return $this->error('Unable to write to ' . $this->plugins);
+                throw new Exception('Unable to write to ' . $this->plugins);
             }
         });
 
@@ -132,24 +137,26 @@ class EjectBlocksCommand extends Command
 
         $this->task('Verifying editor assets', function () {
             if (! $this->verifyAssets()) {
-                return $this->error('Editor assets missing: ' . $this->assets->implode(', '));
+                throw new Exception('Editor assets missing: ' . $this->assets->implode(', '));
             }
         });
 
         $this->task('Verifying editor manifest', function () {
             if (! $this->verifyManifest()) {
-                return $this->error('Asset manifest missing: ' . $this->manifest);
+                throw new Exception('Asset manifest missing: ' . $this->manifest);
             }
         });
 
         $this->task('Checking for webpack manifest', function () {
             if (! $this->verifyManifestJs()) {
-                return;
+                return false;
             }
         });
 
         $this->task('Creating plugin directory', function () {
-            return $this->createDirectory();
+            if (! $this->createDirectory()) {
+                throw new Exception('The operation has been canceled.');
+            }
         });
 
         $this->task('Generating plugin loader', function () {
@@ -174,8 +181,22 @@ class EjectBlocksCommand extends Command
             return $this->exec('wp plugin activate ' . $this->label);
         }, 'using WP-CLI...');
 
-
         return $this->summary();
+    }
+
+    /**
+     * Return existing asset directories.
+     *
+     * @return void
+     */
+    public function findAssets()
+    {
+        return collect($this->js)
+            ->map(function ($directory) {
+                if ($this->files->exists(public_path($directory))) {
+                    return Str::finish($directory, '/');
+                }
+            })->implode('') ?? 'scripts/';
     }
 
     /**
@@ -248,7 +269,7 @@ class EjectBlocksCommand extends Command
             $this->files->isDirectory($this->path) &&
             ! $this->confirm('A plugin containing block assets already exists. Do you wish to overwrite it?')
         ) {
-                return false;
+            return false;
         }
 
         $this->files->deleteDirectory($this->path);

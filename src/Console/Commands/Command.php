@@ -8,21 +8,6 @@ use Roots\Acorn\Console\Commands\Command as CommandBase;
 class Command extends CommandBase
 {
     /**
-     * Write a string as error output.
-     *
-     * @param  string  $string
-     * @param  int|string|null  $verbosity
-     * @return false
-     */
-    public function error($string, $verbosity = null)
-    {
-        $this->line('');
-        $this->line($string, 'error', $verbosity);
-        $this->line('');
-        return false;
-    }
-
-    /**
      * Execute a process and return the status to console.
      *
      * @param  string|array $commands
@@ -62,26 +47,36 @@ class Command extends CommandBase
         $this->output->write("$title: <comment>{$status}</comment>");
 
         try {
-            $status = $task() === false ? false : true;
+            $status = $task() !== false;
         } catch (\Exception $e) {
-            $status = false;
+            $this->clearLine()->line(
+                $title . ': ' . ($status ? '<info>✔</info>' : '<red>x</red>')
+            );
+
+            throw $e;
         }
 
-        if ($this->output->isDecorated()) {
-            $this->output->write("\x0D");
-            $this->output->write("\x1B[2K");
-        } else {
-            $this->output->writeln('');
-        }
-
-        $this->output->writeln(
+        $this->clearLine()->line(
             $title . ': ' . ($status ? '<info>✔</info>' : '<red>x</red>')
         );
+    }
 
-        if (! $status) {
-            exit;
+    /**
+     * Clear the current line in console.
+     *
+     * @return mixed
+     */
+    public function clearLine()
+    {
+        if (! $this->output->isDecorated()) {
+            $this->output->writeln('');
+
+            return $this;
         }
 
-        return $status;
+        $this->output->write("\x0D");
+        $this->output->write("\x1B[2K");
+
+        return $this;
     }
 }
