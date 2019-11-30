@@ -401,16 +401,15 @@ class EjectBlocksCommand extends Command
 
         $this->title('Your blocks have been ejected.');
         $this->line("✨  The following files have been created in <info>{$this->path}</info>:");
+
         $this->line('');
         $this->table(
             ['File', 'Size', 'Type'],
             $files
         );
         $this->line('');
-        $this->line('' .
-            '⚠️  <options=bold>Please Note:</> ' .
-            '<info>' . $this->label . '</info> will not enqueue assets if it detects the same assets ' .
-            'are being ran by <info>' . wp_get_theme()->get('Name') . '</info>.'
-        );
+
+        // phpcs:ignore
+        $this->line('⚠️  <options=bold>Please Note:</> <info>' . $this->label . '</info> will not enqueue assets if it detects the same assets are being ran by <info>' . wp_get_theme()->get('Name') . '</info>.');
     }
 }
