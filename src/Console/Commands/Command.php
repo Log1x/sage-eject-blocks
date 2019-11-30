@@ -2,6 +2,7 @@
 
 namespace Log1x\EjectBlocks\Console\Commands;
 
+use Illuminate\Support\Str;
 use Symfony\Component\Process\Process;
 use Roots\Acorn\Console\Commands\Command as CommandBase;
 
@@ -40,8 +41,10 @@ class Command extends CommandBase
      */
     protected function task($title, $task = null, $status = '...')
     {
+        $title = Str::start($title, '<fg=blue;options=bold>➡</> ');
+
         if (! $task) {
-            return $this->output->write("$title: '<info>✔</info>'");
+            return $this->output->write("$title: <info>✔</info>");
         }
 
         $this->output->write("$title: <comment>{$status}</comment>");
@@ -49,15 +52,13 @@ class Command extends CommandBase
         try {
             $status = $task() !== false;
         } catch (\Exception $e) {
-            $this->clearLine()->line(
-                $title . ': ' . ($status ? '<info>✔</info>' : '<red>x</red>')
-            );
+            $this->clearLine()->line("$title: <fg=red;options=bold>x</>");
 
             throw $e;
         }
 
         $this->clearLine()->line(
-            $title . ': ' . ($status ? '<info>✔</info>' : '<red>x</red>')
+            $title . ': ' . ($status ? '<info>✔</info>' : '<fg=red;options=bold>x</>')
         );
     }
 

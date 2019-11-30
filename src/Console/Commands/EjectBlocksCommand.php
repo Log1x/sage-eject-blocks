@@ -17,7 +17,9 @@ class EjectBlocksCommand extends Command
      *
      * @var string
      */
-    protected $signature = 'eject:blocks';
+    protected $signature = 'eject:blocks
+                            {--defaults : Use default configuration skipping user interaction}
+                            {--skip-yarn : Skip building assets for production with Yarn}';
 
     /**
      * The description of the command.
@@ -95,7 +97,7 @@ class EjectBlocksCommand extends Command
     protected $manifestJs = 'manifest.js';
 
     /**
-     * Create a new controller creator command instance.
+     * Create a new Eject Blocks command instance.
      *
      * @param  \Illuminate\Filesystem\Filesystem  $files
      * @return void
@@ -105,6 +107,9 @@ class EjectBlocksCommand extends Command
         parent::__construct();
 
         $this->files = $files;
+
+        $this->plugins = Str::finish(WP_CONTENT_DIR, '/plugins');
+        $this->js = Str::finish($this->findAssets(), '/');
     }
 
     /**
@@ -114,11 +119,15 @@ class EjectBlocksCommand extends Command
      */
     public function handle()
     {
-        $this->plugins = Str::finish(WP_CONTENT_DIR, '/plugins');
+        $this->logo();
 
         $this->task('Setting up plugin', function () {
+            if ($this->option('defaults')) {
+                return;
+            }
+
             $this->label = $this->anticipate('Plugin name?', [], $this->label);
-            $this->js = Str::finish($this->anticipate('Plugin assets location?', [], $this->findAssets()), '/');
+            $this->js = Str::finish($this->anticipate('Plugin assets location?', [], $this->js), '/');
             $this->assets = explode(
                 ', ',
                 $this->anticipate('Plugin assets?', [], implode(', ', $this->assets))
@@ -131,9 +140,11 @@ class EjectBlocksCommand extends Command
             }
         });
 
-        $this->task('Building assets for production', function () {
-            return $this->exec("yarn --cwd {$this->app->basePath()} run build:production");
-        }, 'running Yarn...');
+        if (! $this->option('skip-yarn')) {
+            $this->task('Building assets for production', function () {
+                return $this->exec("yarn --cwd {$this->app->basePath()} run build:production");
+            }, 'running Yarn...');
+        }
 
         $this->task('Verifying editor assets', function () {
             if (! $this->verifyAssets()) {
@@ -354,6 +365,26 @@ class EjectBlocksCommand extends Command
     }
 
     /**
+     * Displays the Eject Blocks logo and version.
+     *
+     * @return mixed
+     */
+    public function logo()
+    {
+        $this->line('<fg=blue;options=bold>
+  ______ _           _     ____  _            _
+ |  ____(_)         | |   |  _ \| |          | |
+ | |__   _  ___  ___| |_  | |_) | | ___   ___| | _____
+ |  __| | |/ _ \/ __| __| |  _ <| |/ _ \ / __| |/ / __|
+ | |____| |  __/ (__| |_  | |_) | | (_) | (__|   <\__ \
+ |______| |\___|\___|\__| |____/|_|\___/ \___|_|\_\___/
+       _/ |
+      |__/</>                                      <fg=white;options=bold>v1.0.0</>');
+
+        $this->line('');
+    }
+
+    /**
      * Generate a table displaying the folder containing the plugin.
      *
      * @return mixed
@@ -369,14 +400,17 @@ class EjectBlocksCommand extends Command
         })->all();
 
         $this->title('Your blocks have been ejected.');
-        $this->line("The following assets have been created in <info>{$this->path}</info>:");
+        $this->line("✨  The following files have been created in <info>{$this->path}</info>:");
         $this->line('');
         $this->table(
             ['File', 'Size', 'Type'],
             $files
         );
         $this->line('');
-        $this->warn("Note: <info>{$this->label}</info> will not enqueue assets if it detects the same assets are");
-        $this->warn('being ran by <info>' . wp_get_theme()->get('Name') . '</info>.');
+        $this->line('' .
+            '⚠️  <options=bold>Please Note:</> ' .
+            '<info>' . $this->label . '</info> will not enqueue assets if it detects the same assets ' .
+            'are being ran by <info>' . wp_get_theme()->get('Name') . '</info>.'
+        );
     }
 }
