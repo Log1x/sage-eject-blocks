@@ -6,6 +6,7 @@ use Exception;
 use WP_Filesystem_Base;
 use Illuminate\Support\Str;
 use Illuminate\Filesystem\Filesystem;
+use Roots\Acorn\Console\Commands\Command;
 
 use function Roots\asset;
 use function Roots\public_path;
